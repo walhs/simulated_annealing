@@ -7,8 +7,8 @@
 
 using namespace std;
 
-vector<int> tempoAtendimentoCaminhao;
-vector< vector<int> > solucao; //matriz de docas x ordem de atendimento dos caminhoes
+vector<int> tempoAtendimentoCaminhao; // entrada: vetor de tempos de cada caminhão (posição do vetor = ID do caminhão)
+vector< vector<int> > solucao; //matriz de docas x caminhoes alocados em cada doca
 int qntdCaminhao, qntdDocas;
 
 vector< vector<int> > copiaMatrizSolucao (const vector< vector<int> > &matrizSolucao) {
@@ -27,7 +27,6 @@ vector< vector<int> > copiaMatrizSolucao (const vector< vector<int> > &matrizSol
 void geraSolucaoInicial () {
     int doca;
     for (int i=0; i < qntdCaminhao; i++) {
-        //srand(time(NULL));
         doca = rand() % qntdDocas;
         solucao[doca].push_back(i);
     }
@@ -37,29 +36,30 @@ vector< vector<int> > geraSolucaoVizinha (const vector< vector<int> > &matrizSol
     vector< vector<int> > matrizRetorno;
     matrizRetorno = copiaMatrizSolucao(matrizSolucao);
 
-    // MOD nao pode ser feito por 0 (uma doca sem cmainhao)
+    // MOD nao pode ser feito por 0 (uma doca sem caminhao)
     int docaAtual;
     do
     {
-        //srand(time(NULL));
-        docaAtual = rand() % qntdDocas;
+        docaAtual = rand() % qntdDocas; // escolhe aleatoriamente uma doca
     }while(matrizSolucao[docaAtual].size() == 0);
 
-    //srand(time(NULL));
+    // nessa doca escolhida aleatoriamente, escolhe-se um caminhão aleatoriamente
     int indiceCaminhaoNaDoca = rand() % matrizSolucao[docaAtual].size();
 
-    //srand(time(NULL));
+    // escolhe-se aleatoriamente a nova doca em que o caminhão será alocado
     int novaDoca = rand() % qntdDocas;
 
     int idCaminhao = matrizSolucao[docaAtual][indiceCaminhaoNaDoca];
-    matrizRetorno[novaDoca].push_back(idCaminhao);
-
+    // insere-se o caminhão na nova doca
+    matrizRetorno[novaDoca].push_back(idCaminhao); // a ordem dos caminhões nas docas não importam no nosso problema
+    // retira-se o caminhão da doca antiga
     matrizRetorno[docaAtual].erase(matrizRetorno[docaAtual].begin() + indiceCaminhaoNaDoca);
-
+    //retorna nova solução = novo vizinho
     return matrizRetorno;
 }
 
-int FO (const vector< vector<int> > &matrizSolucao) { //maior tempo de atendimento das docas
+// retorna função objetivo para cada solução: o maior tempo de atendimento dentre as docas
+int FO (const vector< vector<int> > &matrizSolucao) {
     int maiorTempo = 0;
     int tempo = 0;
     for (unsigned int i=0; i < matrizSolucao.size(); i++){
@@ -102,17 +102,16 @@ void SA (float T0, int SAmax, float alfa) {
             }
 
             else {
-                //srand(time(NULL));
-                float r = ((float) rand() / (RAND_MAX));
+                float r = ((float) rand() / (RAND_MAX)); //rand entre 0 e 1
                 float prob = exp(-(float)delta / T);
-                if (r < prob) {
+                if (r < prob) { // aceita uma solução pior
                     solucaoCorrente = solucaoVizinha;
                     tempoSolucaoCorrente = tempoSolucaoVizinha;
                 }
             }
 
         }
-        T = alfa*T;
+        T = alfa*T; //diminui temperarura de acordo com o alfa
         iteracao = 0;
     }
 }
@@ -139,26 +138,23 @@ int main()
         tempoAtendimentoCaminhao.push_back(entrada);
     }
 
-    /*
-    while (qntdCaminhao > 0) {
-        cin >> entrada;
-        //cout << entrada << endl;
-        tempoAtendimentoCaminhao.push_back(entrada);
-        --qntdCaminhao;
-    }*/
-
     inicializaMatrizSolucao();
     SA(T0, SAmax, alfa);
 
     int tempoTotal = 0;
+    int maiorTempo = 0;
     for (unsigned int i=0; i < solucao.size(); i++) {
         cout << "Doca " << i+1 << endl;
         for (unsigned int j=0; j < solucao[i].size(); j++) {
             cout << "Caminhao " << solucao[i][j] << endl;
             tempoTotal += tempoAtendimentoCaminhao[solucao[i][j]];
         }
+        if (tempoTotal > maiorTempo) {
+            maiorTempo = tempoTotal;
+        }
         cout << "Tempo total " << tempoTotal << endl << endl;
         tempoTotal= 0;
     }
+    cout << "Valor da Solucao: " << maiorTempo << endl;
     return 0;
 }
